@@ -13,8 +13,8 @@
 
 ## 下载
 
-- **安装包（推荐）**：[`dist/StageMicing_Setup.exe`](dist/StageMicing_Setup.exe) —— 双击安装，免管理员权限，装到 `%LOCALAPPDATA%\StageMicing`，自动建快捷方式，可从「开始菜单」卸载。
-- **开发版整包**（源码 + 构建树 + 工具 + 快照）：见 **Releases**。
+- **安装包（推荐）**：[dist/StageMicing_Setup.exe](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_Setup.exe) —— 双击安装，免管理员权限，装到 `%LOCALAPPDATA%\StageMicing`，自动建快捷方式，可从「开始菜单」卸载。
+- **开发版整包**（源码 + 工具 + 文档 + 快照 + 安装器脚本）：[dist/StageMicing_开发版.zip](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_%E5%BC%80%E5%8F%91%E7%89%88.zip)（88 MB）
 - **说明书**：`manuals/`（中文 / English / Deutsch / Français）。
 
 ## 功能
@@ -93,8 +93,8 @@ then export a stage plot (PNG) and a channel list (PDF). No network, no external
 
 ## Download
 
-- **Installer (recommended)**: [`dist/StageMicing_Setup.exe`](dist/StageMicing_Setup.exe) — double-click, no administrator rights, installs to `%LOCALAPPDATA%\StageMicing`, creates shortcuts, uninstall from the Start menu.
-- **Developer package** (sources + build tree + tools + snapshots): see **Releases**.
+- **Installer (recommended)**: [dist/StageMicing_Setup.exe](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_Setup.exe) — double-click, no administrator rights, installs to `%LOCALAPPDATA%\StageMicing`, creates shortcuts, uninstall from the Start menu.
+- **Developer package** (sources + tools + docs + snapshots + installer scripts): [dist/StageMicing_开发版.zip](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_%E5%BC%80%E5%8F%91%E7%89%88.zip) (88 MB)
 - **Manuals**: `manuals/` (Chinese / English / Deutsch / Français).
 
 ## Features
