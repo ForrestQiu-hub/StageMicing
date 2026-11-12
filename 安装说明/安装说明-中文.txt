@@ -1,0 +1,27 @@
+﻿Stage Micing 安装说明（中文）
+
+一、安装步骤
+1. 双击压缩包里的 StageMicing_Setup.exe，无需管理员权限。
+2. 程序安装到 %LOCALAPPDATA%\StageMicing。
+3. 安装过程会询问是否注册 .smproj 文件关联（Y 注册 / n 跳过）。
+4. 自动创建开始菜单与桌面快捷方式。
+5. 卸载：开始菜单 -> 卸载 Stage Micing。
+
+二、运行环境
+- Windows 10 / 11（64 位）。
+- 不需要 .NET 或其它运行库。
+
+三、常见问题
+- 图标是空白：assets 文件夹必须与 StageMicing.exe 处于同一目录（正常安装不会出现）。
+- 打不开工程：确认文件扩展名为 .smproj，或先用 文件 -> 打开项目。
+- 忘记应用锁密码：没有重置后门，需删除 exe 旁的 applock.dat 重新设置。
+
+四、压缩包内容
+StageMicing_Setup.exe   安装程序（已内含主程序、图标素材与示例工程）
+说明书\                使用说明书（中/英/德/法）
+安装说明\              本说明（四语）
+功能总览.txt            全部功能一览
+简介.txt                产品简介
+
+安装完成后，程序目录（%LOCALAPPDATA%\StageMicing）包含：
+StageMicing.exe、assets\（必需）、demo\（示例工程）、说明书\、安装说明\、功能总览.txt、简介.txt

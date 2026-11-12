@@ -1,0 +1,26 @@
+﻿Stage Micing - Installation (Deutsch)
+
+1) Installation
+   1. StageMicing_Setup.exe aus diesem Archiv ausfuehren - keine Administratorrechte noetig.
+   2. Installation nach %LOCALAPPDATA%\StageMicing.
+   3. Es wird gefragt, ob die Dateizuordnung .smproj registriert werden soll (Y / n).
+   4. Startmenue- und Desktop-Verknuepfungen werden automatisch erstellt.
+   5. Deinstallation: Startmenue -> Stage Micing deinstallieren.
+
+2) Voraussetzungen
+   - Windows 10 / 11 (64 Bit). Kein .NET oder zusaetzliche Runtime erforderlich.
+
+3) Probleme
+   - Leere Symbole: der Ordner assets muss neben der exe liegen (bei normaler Installation automatisch).
+   - Projekt oeffnet nicht: Datei muss auf .smproj enden (oder Datei -> Projekt oeffnen).
+   - Passwort vergessen: kein Reset moeglich; applock.dat neben der exe loeschen.
+
+4) Inhalt des Archivs
+   StageMicing_Setup.exe   Installer (enthaelt Programm, Assets und Beispiele)
+   说明书\                 Handbuecher zh / en / de / fr
+   安装说明\               diese Datei, vier Sprachen
+   功能总览.txt            vollstaendige Funktionsliste
+   简介.txt                Produktvorstellung
+
+Nach der Installation enthaelt %LOCALAPPDATA%\StageMicing:
+StageMicing.exe, assets\ (erforderlich), demo\, 说明书\, 安装说明\, 功能总览.txt, 简介.txt

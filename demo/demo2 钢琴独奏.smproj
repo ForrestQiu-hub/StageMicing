@@ -1,0 +1,24 @@
+SMPROJ 1
+# Stage Micing project — UTF-8, one record per line
+piece ""
+venue ""
+conductor ""
+sysengineer ""
+recengineer ""
+asstengineer ""
+notes ""
+stage 14.000 12.000 5.000
+ceiling 8.000
+colors 3A3732 554C42 33302B FBF9F4
+samplerate 48000
+showinstruments 1
+showmics 1
+showinstrtext 1
+showmictext 1
+pngscale 4
+lenmode 0
+nextid 43
+nextdeviceid 1
+item 42 0 "grand_piano" 7.000 6.500 270.000 1.500 0.000 0.000 1 0 1.600 2.700 "三角钢琴" "" "" "" "" "" "" 0 6.500 0.000 color 0x000000
+mainmics 0
+chorder 0

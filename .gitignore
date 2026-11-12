@@ -1,0 +1,27 @@
+# build output
+build/
+build2/
+dev/build/
+dev/build2/
+*.exe
+!dist/StageMicing_Setup.exe
+!dev/installer/payload/StageMicing.exe
+
+# IDE / OS
+.vs/
+*.user
+Thumbs.db
+desktop.ini
+
+# temporary verification output
+tmp_*/
+dev/tmp_*/
+dev/snapshots/
+dev/manual_build/
+*.log
+*.part
+
+# big release artefacts (upload them to GitHub Releases instead)
+dist/*.zip
+dev/installer/payload.zip
+dev/installer/payload/

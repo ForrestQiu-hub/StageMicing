@@ -1,0 +1,4 @@
+#include <windows.h>
+
+// Application icon (also used for the executable's Explorer thumbnail).
+1 ICON "app.ico"

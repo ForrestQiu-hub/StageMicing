@@ -1,0 +1,27 @@
+SMPROJ 1
+# Stage Micing project — UTF-8, one record per line
+piece ""
+venue ""
+conductor ""
+sysengineer ""
+recengineer ""
+asstengineer ""
+notes ""
+stage 14.000 10.000 5.000
+ceiling 8.000
+colors 3A3732 554C42 33302B FBF9F4
+samplerate 48000
+showinstruments 1
+showmics 1
+showinstrtext 1
+showmictext 1
+pngscale 4
+lenmode 0
+nextid 52
+nextdeviceid 1
+item 46 0 "violin" 5.722 7.625 15.097 1.500 0.000 0.000 1 0 0.945 0.432 "第一小提琴" "" "" "" "" "" "" 0 6.500 0.000 color 0x000000
+item 49 0 "cello" 8.172 7.575 334.303 1.500 0.000 0.000 1 0 1.215 0.576 "大提琴" "" "" "" "" "" "" 0 6.500 0.000 color 0x000000
+item 50 0 "grand_piano" 7.200 5.350 283.073 1.500 0.000 0.000 1 0 1.600 2.700 "三角钢琴" "" "" "" "" "" "" 0 6.500 0.000 color 0x000000
+item 51 0 "viola" 6.750 6.800 269.029 1.500 0.000 0.000 1 0 0.990 0.441 "中提琴" "" "" "" "" "" "" 0 6.500 0.000 color 0x000000
+mainmics 0
+chorder 0
