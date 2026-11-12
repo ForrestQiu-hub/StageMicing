@@ -23,5 +23,6 @@ dev/manual_build/
 
 # big release artefacts (upload them to GitHub Releases instead)
 dist/*.zip
+# 开发版整包随仓库一起发（88 MB，低于 GitHub 100 MB 上限）
 dev/installer/payload.zip
 dev/installer/payload/
