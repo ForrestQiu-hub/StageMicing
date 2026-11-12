@@ -2073,49 +2073,131 @@ ChTableGeom App::ChannelTableGeom() const {
     gt.chipY = gt.titleY + d(34);
     gt.chipH = d(26);
     gt.colLabel = {gt.x0, gt.chipY, gt.x0 + d(64), gt.chipY + gt.chipH};
+    // one measuring surface for every label of this band; a label that does not
+    // fit is fitted the same way the top-bar chips are (short form → 0.5 pt
+    // smaller font down to 7.5 → ellipsis), so no translation can push a control
+    // out of the toolbar or into its neighbour.
+    Gdiplus::Bitmap probe(1, 1, PixelFormat32bppARGB);
+    Gdiplus::Graphics pg(&probe);
+    auto measure = [&](const std::wstring& t, float fpx) -> int {
+        // the SAME em App::Font() ends up with: the +2 design bump and the
+        // dpi / uiScale factor.  (Measuring without the bump underestimated every
+        // chip by ~25% and the painter then had to elide labels that "fit".)
+        const float em = (std::max)(7.f, fpx + 2.f) * dpi_ * uiScale_;
+        Gdiplus::Font f(family_, em, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+        Gdiplus::RectF rr{};
+        pg.MeasureString(t.c_str(), (INT)t.size(), &f, Gdiplus::PointF(0, 0), &rr);
+        return (int)std::ceil(rr.Width);
+    };
+    // fit `full` into maxW: the full label, else the short one, else a smaller
+    // size (0.5 pt steps, floor 7.5), else the short label trimmed with '…'
+    auto fitLabel = [&](const std::wstring& full, const std::wstring& alt, int maxW,
+                        float maxSize, float minSize, std::wstring* text, float* size,
+                        int* textW, int* usedShort) {
+        *text = full;
+        *size = maxSize;
+        *textW = measure(full, maxSize);
+        *usedShort = 0;
+        if (*textW <= maxW) return;
+        if (!alt.empty() && alt != full) {
+            *text = alt;
+            *usedShort = 1;
+            *textW = measure(alt, maxSize);
+            if (*textW <= maxW) return;
+        }
+        for (float sz = maxSize - 0.5f; sz >= minSize - 0.001f; sz -= 0.5f) {
+            const int w = measure(*text, sz);
+            if (w <= maxW) {
+                *size = sz;
+                *textW = w;
+                return;
+            }
+        }
+        *size = minSize;
+        std::wstring t = *text;
+        while (!t.empty() && t.back() == L' ') t.pop_back();
+        while (!t.empty() && measure(t + L"…", *size) > maxW) t.pop_back();
+        *text = t.empty() ? L"…" : t + L"…";
+        *textW = measure(*text, *size);
+    };
     // 「自动排序」 sits at the right end of the toolbar, level with the 通道表 title
     // (the chip band keeps its full width, so the six 显示列 chips still fit one row).
-    // The pager 「◀ 第 i / N 页 ▶」 sits immediately to its left.
+    // The pager 「◀ 第 i / N 页 ▶」 sits immediately to its left.  Both widths come
+    // from their FITTED labels, so a long German / French caption can neither be
+    // clipped nor push the pager out of the band.
     {
-        const int bw = d(104), bh = d(24);
+        const int bh = d(24);
         const int by = gt.titleY + (gt.titleH - bh) / 2;
+        // the button may grow leftwards, but never over the 通道表 title
+        const int titleW = measure(L10n::T(S::ChTitle), 12.f);
+        const int maxAutoW =
+            (std::max)(d(72), (int)(gt.x1 - (gt.x0 + titleW + d(24))));
+        const int maxRoom = (std::max)(d(24), maxAutoW - d(24));
+        std::wstring aText;
+        float aFont = 8.5f;
+        int aW = 0, aShort = 0;
+        fitLabel(L10n::T(S::ChAutoSort), L10n::T(S::ChAutoSortShort), maxRoom, 8.5f,
+                 7.5f, &aText, &aFont, &aW, &aShort);
+        const int bw = (std::min)(maxAutoW, (std::max)(d(104), aW + d(24)));
+        gt.autoSortText = aText;
+        gt.autoSortFont = aFont;
+        gt.autoSortTextW = aW;
+        gt.autoSortShort = aShort;
         gt.autoSort = {gt.x1 - bw, by, gt.x1, by + bh};
-        const int btn = d(24), lblW = d(112), gap = d(6);
-        gt.pageNext = {gt.autoSort.left - gap - btn, by, gt.autoSort.left - gap, by + bh};
+        // the pager: its caption is fitted too; the arrows stay d(24) wide
+        const std::wstring pageSample = dr::Fmt(L10n::T(S::ChPageFmt), 9, 9);
+        std::wstring pText;
+        float pFont = 8.5f;
+        int pW = 0, pShort = 0;
+        fitLabel(pageSample, pageSample, d(112), 8.5f, 7.5f, &pText, &pFont, &pW,
+                 &pShort);
+        gt.pageText = pText;
+        gt.pageFont = pFont;
+        gt.pageTextW = pW;
+        const int btn = d(24), lblW = (std::max)(d(112), pW + d(16)), gap = d(6);
+        gt.pageNext = {gt.autoSort.left - gap - btn, by, gt.autoSort.left - gap,
+                       by + bh};
         gt.pageLabel = {gt.pageNext.left - lblW, by, gt.pageNext.left, by + bh};
         gt.pagePrev = {gt.pageLabel.left - btn, by, gt.pageLabel.left, by + bh};
     }
     // 显示列 chips: ALWAYS ONE ROW.  Every chip is as wide as its own label; the
     // band owns the full toolbar width (the pager and 自动排序 sit on the title row
-    // above).  If it still does not fit, the padding / gap shrink first and then
-    // the chip font drops 1 pt — the band never wraps and never scrolls.
+    // above).  If it still does not fit, the padding / gap shrink first, then the
+    // chip font drops to 7.5, then the chips share the band and each label is
+    // trimmed with an ellipsis — the band never wraps, never scrolls and never
+    // crosses x1.
     {
         const int chipsX = gt.x0 + d(68);
         const int availW = (std::max)(d(120), (int)(gt.x1 - chipsX));
         const S chipNames[kChCols] = {S::ChNum,     S::ChModel, S::ChInst, S::ChRemark,
                                       S::CbLink,    S::CbLen,   S::ChToMainShort,
                                       S::ChAzimuth};
-        Gdiplus::Bitmap probe(1, 1, PixelFormat32bppARGB);
-        Gdiplus::Graphics pg(&probe);
-        auto textW = [&](const std::wstring& t, float fpx) -> int {
-            Gdiplus::Font f(family_, fpx * dpi_ * uiScale_,
-                            Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
-            Gdiplus::RectF rr{};
-            pg.MeasureString(t.c_str(), (INT)t.size(), &f, Gdiplus::PointF(0, 0), &rr);
-            return (int)std::ceil(rr.Width);
-        };
+        // the compact form each chip falls back to (short form → smaller font →
+        // ellipsis), exactly like the top-bar chips
+        const S chipShorts[kChCols] = {S::ChNumChip,   S::ChModelChip, S::ChInstChip,
+                                       S::ChRemarkChip, S::CbLinkChip, S::CbLenChip,
+                                       S::ChToMainChip, S::ChAzimuthChip};
         int padX = d(8), gapX = d(8);
         float chipFont = 8.5f;
+        bool shortForm = false;
+        auto chipNeed = [&](int i, float font) {
+            const std::wstring label =
+                L10n::T(shortForm ? chipShorts[i] : chipNames[i]);
+            return d(12) + d(6) + measure(label, font) + 2 * padX + d(6);
+        };
         auto measureAll = [&]() {
             int sum = 0;
-            for (int i = 0; i < kChCols; ++i)
-                sum += d(12) + d(6) + textW(L10n::T(chipNames[i]), chipFont) + 2 * padX;
+            for (int i = 0; i < kChCols; ++i) sum += chipNeed(i, chipFont);
             return sum + (kChCols - 1) * gapX;
         };
         int tw = measureAll();
         if (tw > availW) {
             padX = d(5);
             gapX = d(5);
+            tw = measureAll();
+        }
+        if (tw > availW) {
+            shortForm = true;   // the compact labels (still one row, still readable)
             tw = measureAll();
         }
         if (tw > availW) {
@@ -2127,10 +2209,42 @@ ChTableGeom App::ChannelTableGeom() const {
             gapX = d(3);
             tw = measureAll();
         }
+        int slotW[kChCols] = {};
+        for (int i = 0; i < kChCols; ++i) slotW[i] = chipNeed(i, chipFont);
+        if (tw > availW) {
+            // HARD: the sum of the chips may not exceed the band.  Every chip gets
+            // a proportional slot (min d(30)) and its label is fitted into it.
+            const int band = availW - (kChCols - 1) * gapX;
+            const double f = band / (double)tw;
+            int sum = 0;
+            for (int i = 0; i < kChCols; ++i) {
+                slotW[i] = (std::max)(d(30), (int)std::lround(slotW[i] * f));
+                sum += slotW[i];
+            }
+            int guard = 0;
+            while (sum > band && guard++ < 4000) {
+                int widest = 0;
+                for (int i = 1; i < kChCols; ++i)
+                    if (slotW[i] > slotW[widest]) widest = i;
+                if (slotW[widest] <= d(30)) break;
+                --slotW[widest];
+                --sum;
+            }
+        }
         int x = chipsX;
         for (int i = 0; i < kChCols; ++i) {
-            const int cw = d(12) + d(6) + textW(L10n::T(chipNames[i]), chipFont) +
-                           2 * padX + d(6);   // slack: the label is never trimmed
+            const int maxRoom =
+                (std::max)(d(8), slotW[i] - d(12) - d(6) - 2 * padX - d(6));
+            std::wstring text;
+            float fsz = chipFont;
+            int textW = 0, usedShort = 0;
+            fitLabel(L10n::T(chipNames[i]), L10n::T(chipShorts[i]), maxRoom, chipFont,
+                     7.5f, &text, &fsz, &textW, &usedShort);
+            gt.chipText[i] = text;
+            gt.chipTextW[i] = textW;
+            gt.chipShort[i] = usedShort;
+            gt.chipFontOf[i] = fsz;
+            const int cw = (std::max)(slotW[i], d(30));
             gt.chip[i] = {x, gt.chipY, x + cw, gt.chipY + gt.chipH};
             x += cw + gapX;
         }
@@ -2274,7 +2388,9 @@ void App::PaintChannelTable(Gdiplus::Graphics& g) {
             dr::Line(g, bx, by, ex, ey, dr::C(0xFFFFFF), 1.3f);
         }
         RECT tr = {cb.right + d(6), c.top, c.right - d(2), c.bottom};
-        dr::Text(g, L10n::T(chipNames[i]), Font(gt.chipFont),
+        // the label ChannelTableGeom fitted into this chip (never clipped)
+        dr::Text(g, gt.chipText[i], Font(gt.chipFontOf[i] > 0.f ? gt.chipFontOf[i]
+                                                                : gt.chipFont),
                  dr::C(on ? theme::kText : theme::kTextMuted), tr, 0, true);
     }
 
@@ -2287,8 +2403,8 @@ void App::PaintChannelTable(Gdiplus::Graphics& g) {
                       dr::C(hov ? theme::kHover : theme::kPanel));
         dr::StrokeRound(g, dr::RF(b), (float)d(5),
                         dr::C(hov ? theme::kBorderStrong : theme::kBorder), 1.f);
-        RECT br = {b.left + d(10), b.top, b.right - d(8), b.bottom};
-        dr::Text(g, L10n::T(S::ChAutoSort), Font(8.5f),
+        RECT br = {b.left + d(16), b.top, b.right - d(8), b.bottom};
+        dr::Text(g, gt.autoSortText, Font(gt.autoSortFont),
                  dr::C(manual ? theme::kText : theme::kTextFaint), br, 0, true);
         // a tiny "sort" glyph: three bars of decreasing length, left of the text
         const int gx = b.left + d(4);
@@ -2324,9 +2440,9 @@ void App::PaintChannelTable(Gdiplus::Graphics& g) {
         };
         pbtn(gt.pagePrev, hasPrev, ui_.hoverChPageBtn == 1, true);
         pbtn(gt.pageNext, hasNext, ui_.hoverChPageBtn == 2, false);
-        dr::Text(g, dr::Fmt(L10n::T(S::ChPageFmt), page + 1, pages), Font(8.5f),
-                 dr::C(pages > 1 ? theme::kText : theme::kTextFaint), gt.pageLabel, 1,
-                 true);
+        dr::Text(g, dr::Fmt(L10n::T(S::ChPageFmt), page + 1, pages),
+                 Font(gt.pageFont), dr::C(pages > 1 ? theme::kText : theme::kTextFaint),
+                 gt.pageLabel, 1, true);
     }
     // --- header band ---------------------------------------------------------
     dr::FillRound(g, Gdiplus::RectF((float)gt.x0, (float)gt.headerY,

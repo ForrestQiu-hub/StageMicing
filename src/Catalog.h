@@ -10,12 +10,19 @@ struct CatItem {
     const wchar_t* group;
     double w;   // footprint width in metres (top view)
     double h;   // footprint depth in metres
+    // German / French names, appended last so a row may leave them out: nullptr
+    // falls back to `en` in ItemName(), a missed row can never break a language.
+    const wchar_t* de = nullptr;
+    const wchar_t* fr = nullptr;
 };
 
 struct CatGroup {
     const wchar_t* id;
     const wchar_t* zh;
     const wchar_t* en;
+    // German / French section heading (nullptr → the English one)
+    const wchar_t* de = nullptr;
+    const wchar_t* fr = nullptr;
 };
 
 const std::vector<CatItem>& Instruments();

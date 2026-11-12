@@ -10,6 +10,7 @@
 #include "Theme.h"
 
 #include <algorithm>
+#include <cassert>
 #include <map>
 #include <cmath>
 #include <fstream>
@@ -116,6 +117,10 @@ int App::Run(HINSTANCE hInst, int nCmdShow) {
                     // dev hook: write the muted-palette table (defId -> tint ->
                     // drawn ink) and exit; fails when two ids share a colour
                     dumpColorsPath_ = argv[++i];
+                } else if (!_wcsicmp(argv[i], L"--dump-names") && i + 1 < argc) {
+                    // dev hook: every catalogue name (instruments / mics / 对应乐器
+                    // targets / group headings) in all four languages, then exit
+                    dumpNamesPath_ = argv[++i];
                 } else if (!_wcsicmp(argv[i], L"--preset") && i + 1 < argc) {
                     startupPreset_ = _wtoi(argv[++i]);   // dev hook: load a preset
                 } else if (!_wcsicmp(argv[i], L"--zoom") && i + 1 < argc) {
@@ -197,6 +202,11 @@ int App::Run(HINSTANCE hInst, int nCmdShow) {
                     startupInputs_.push_back({4, _wtoi(argv[++i]), _wtoi(argv[++i])});
                 } else if (!_wcsicmp(argv[i], L"--key") && i + 1 < argc) {
                     startupInputs_.push_back({3, _wtoi(argv[++i]), 0});
+                } else if (!_wcsicmp(argv[i], L"--winsize") && i + 2 < argc) {
+                    // test hook: resize the CLIENT area before the scripted inputs
+                    // (layout checks at 1400x900 / 1843x1172)
+                    startupWinW_ = (std::max)(1000, _wtoi(argv[++i]));
+                    startupWinH_ = (std::max)(700, _wtoi(argv[++i]));
                 } else if (!_wcsicmp(argv[i], L"--ctrl")) {
                     // test hook: the NEXT scripted --key arrives with Ctrl held
                     // (GetKeyState is the real keyboard and cannot be faked)
@@ -260,6 +270,25 @@ int App::Run(HINSTANCE hInst, int nCmdShow) {
 
     OnCreate();
     ShowWindow(hwnd_, nCmdShow);
+    if (startupWinW_ > 0 && startupWinH_ > 0) {
+        // --winsize W H: size the CLIENT area (the frame is measured from the style)
+        RECT wr2 = {0, 0, startupWinW_, startupWinH_};
+        AdjustWindowRectEx(&wr2, WS_OVERLAPPEDWINDOW, FALSE, 0);
+        SetWindowPos(hwnd_, nullptr, 0, 0, wr2.right - wr2.left, wr2.bottom - wr2.top,
+                     SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        // AdjustWindowRectEx can disagree with the real frame (DWM): correct once so
+        // the client really is W x H (the layout checks depend on it)
+        RECT cr2 = {}, wrNow = {};
+        GetClientRect(hwnd_, &cr2);
+        const int dw = startupWinW_ - (cr2.right - cr2.left);
+        const int dh = startupWinH_ - (cr2.bottom - cr2.top);
+        if (dw != 0 || dh != 0) {
+            GetWindowRect(hwnd_, &wrNow);
+            SetWindowPos(hwnd_, nullptr, 0, 0, (wrNow.right - wrNow.left) + dw,
+                         (wrNow.bottom - wrNow.top) + dh,
+                         SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
     // the controls are created hidden: place them right away so the first frame
     // is already correct (no flash of stacked EDITs)
     Layout();
@@ -458,6 +487,59 @@ int App::Run(HINSTANCE hInst, int nCmdShow) {
         DestroyWindow(hwnd_);
         return bad.empty() ? 0 : 2;
     }
+    if (!dumpNamesPath_.empty()) {
+        // dev hook (--dump-names <file>): the whole catalogue in all four
+        // languages, read through the SAME ItemName() / GroupName() / SpotTypeName()
+        // the palette, the inspector, the 03 乐器 column and the PDF use, so the
+        // table proves what those surfaces print.
+        std::wstring out;
+        const Lang keep = L10n::Get();
+        static const Lang kLangs[4] = {Lang::Zh, Lang::En, Lang::De, Lang::Fr};
+        static const wchar_t* kTags[4] = {L"zh", L"en", L"de", L"fr"};
+        auto itemLine = [&](const wchar_t* kind, const CatItem& it) {
+            std::wstring line = std::wstring(kind) + L" " + it.id;
+            for (int i = 0; i < 4; ++i) {
+                L10n::Set(kLangs[i]);
+                line += L" " + std::wstring(kTags[i]) + L"<" + ItemName(it) + L">";
+            }
+            return line + L"\n";
+        };
+        auto groupLine = [&](const wchar_t* kind, const CatGroup& g) {
+            std::wstring line = std::wstring(kind) + L" " + g.id;
+            for (int i = 0; i < 4; ++i) {
+                L10n::Set(kLangs[i]);
+                line += L" " + std::wstring(kTags[i]) + L"<" + GroupName(g) + L">";
+            }
+            return line + L"\n";
+        };
+        for (const auto& it : Instruments()) out += itemLine(L"inst", it);
+        for (const auto& it : Mics()) out += itemLine(L"mic", it);
+        for (const auto& it : SpotExtras()) {
+            std::wstring line = std::wstring(L"spot ") + it.id;
+            for (int i = 0; i < 4; ++i) {
+                L10n::Set(kLangs[i]);
+                line += L" " + std::wstring(kTags[i]) + L"<" + SpotTypeName(it.id) +
+                        L">";
+            }
+            out += line + L"\n";
+        }
+        for (const auto& g : InstrumentGroups()) out += groupLine(L"igroup", g);
+        for (const auto& g : MicGroups()) out += groupLine(L"mgroup", g);
+        L10n::Set(keep);
+        std::string utf8;
+        const int need = WideCharToMultiByte(CP_UTF8, 0, out.c_str(), (int)out.size(),
+                                            nullptr, 0, nullptr, nullptr);
+        utf8.resize((size_t)need);
+        WideCharToMultiByte(CP_UTF8, 0, out.c_str(), (int)out.size(), utf8.data(), need,
+                            nullptr, nullptr);
+        FILE* f = nullptr;
+        if (_wfopen_s(&f, dumpNamesPath_.c_str(), L"wb") == 0 && f) {
+            fwrite(utf8.data(), 1, utf8.size(), f);
+            fclose(f);
+        }
+        DestroyWindow(hwnd_);
+        return 0;
+    }
     if (!dumpLayoutPath_.empty()) {
         // dev hook (--dump-layout <file>): save the instrument placement as
         // ready-to-paste preset rows, then exit.  Runs AFTER --open / --preset /
@@ -575,6 +657,66 @@ int App::Run(HINSTANCE hInst, int nCmdShow) {
         }
         // the stage the project is planning right now (metres) + the three
         // 音乐厅 / 教堂 / 沙龙 chips of the 01 page, so a script can press them
+        // ---- language dropdown + top-bar chip fit (dev hook) ---------------
+        // Rebuilt from the chip exactly like a paint / hit-test would, so a script
+        // can prove the list rect is (a) non-empty while open, (b) fully inside the
+        // client, (c) recomputed for the CURRENT chip after a language switch, and
+        // that the inspector EDITs are hidden while it is open.
+        {
+            RebuildLangMenu();
+            out += dr::Fmt(L"lang get %d code %s open %d fit %d box %ld %ld %ld %ld list %ld %ld %ld %ld\n",
+                           (int)L10n::Get(), L10n::Code(L10n::Get()),
+                           ui_.langOpen ? 1 : 0, langFits_,
+                           L_.langBox.left, L_.langBox.top, L_.langBox.right,
+                           L_.langBox.bottom, L_.langList.left, L_.langList.top,
+                           L_.langList.right, L_.langList.bottom);
+            for (int i = 0; i < 4; ++i)
+                out += dr::Fmt(L"langrow %d %ld %ld %ld %ld %s\n", i,
+                               L_.langRow[i].left, L_.langRow[i].top,
+                               L_.langRow[i].right, L_.langRow[i].bottom,
+                               (int)L10n::Get() == i ? L"active" : L"");
+            int visInsp = 0, hidInsp = 0, visOther = 0;
+            for (HWND h = GetWindow(hwnd_, GW_CHILD); h; h = GetWindow(h, GW_HWNDNEXT)) {
+                wchar_t cls[32] = L"";
+                if (!GetClassNameW(h, cls, 32) || _wcsicmp(cls, L"EDIT") != 0) continue;
+                const int id = GetDlgCtrlID(h);
+                if (id == ID_SEARCH || id == ID_CHCELL) {
+                    if (IsWindowVisible(h)) ++visOther;
+                    continue;
+                }
+                if (IsWindowVisible(h)) ++visInsp;
+                else ++hidInsp;
+            }
+            out += dr::Fmt(L"langedits inspector %d hidden %d other %d\n", visInsp,
+                           hidInsp, visOther);
+            static const wchar_t* kTopNames[6] = {L"file", L"sra",   L"simple",
+                                                  L"export", L"preset", L"lang"};
+            for (int i = 0; i < 6; ++i) {
+                const UiLayout::ChipFit& c = L_.topChip[i];
+                out += dr::Fmt(L"topchip %s %ld %ld %ld %ld slot %d textw %d font %.1f short %d elided %d <%s>\n",
+                               kTopNames[i], c.r.left, c.r.top, c.r.right, c.r.bottom,
+                               c.slotW, c.textW, (double)c.font, c.shortForm, c.elided,
+                               c.text.c_str());
+            }
+            // the 03 toolbar band: chip widths vs the band width + the fitted labels
+            const ChTableGeom gt = ChannelTableGeom();
+            out += dr::Fmt(L"chband font %.1f avail %ld autosort <%s> font %.1f textw %d box %ld %ld %ld %ld short %d\n",
+                           (double)gt.chipFont, (long)(gt.x1 - gt.x0),
+                           gt.autoSortText.c_str(), (double)gt.autoSortFont,
+                           gt.autoSortTextW, gt.autoSort.left, gt.autoSort.top,
+                           gt.autoSort.right, gt.autoSort.bottom, gt.autoSortShort);
+            out += dr::Fmt(L"chpage <%s> font %.1f textw %d box %ld %ld %ld %ld\n",
+                           gt.pageText.c_str(), (double)gt.pageFont, gt.pageTextW,
+                           gt.pageLabel.left, gt.pageLabel.top, gt.pageLabel.right,
+                           gt.pageLabel.bottom);
+            for (int i = 0; i < kChCols; ++i)
+                out += dr::Fmt(L"chchip2 %d %ld %ld %ld %ld textw %d short %d font %.1f <%s>\n",
+                               i, gt.chip[i].left, gt.chip[i].top, gt.chip[i].right,
+                               gt.chip[i].bottom, gt.chipTextW[i], gt.chipShort[i],
+                               (double)(gt.chipFontOf[i] > 0.f ? gt.chipFontOf[i]
+                                                               : gt.chipFont),
+                               gt.chipText[i].c_str());
+        }
         out += dr::Fmt(L"stage %.3f %.3f\n", pr_.stage.w, pr_.stage.d);
         for (int i = 0; i < 3; ++i)
             out += dr::Fmt(L"stagepreset %d %ld %ld %ld %ld\n", i,
@@ -1851,6 +1993,9 @@ void App::Layout() {
     L_.brand = {S(60), S(9), S(280), S(37)};
     L_.brandSub = {S(61), S(35), S(286), S(53)};
     LayoutTopBar();   // measured right-aligned chip cluster + tab strip
+    // the language dropdown hangs under the chip: its rect is rebuilt here too,
+    // so a language switch / resize can never leave the list at a stale place
+    RebuildLangMenu();
 
     // --- left panel ---------------------------------------------------------
     int lx = S(20), lr = leftW - S(18);
@@ -2118,8 +2263,12 @@ void App::Layout() {
     // and clipped to the panel — otherwise a scrolled field floats over the top
     // bar / canvas / status bar and the panel looks scrambled.
     // while the lock popover / passcode modal is open it owns the window: no
-    // child EDIT may poke through it (they are real HWNDs and would paint on top)
-    const bool lockOverlay = (lockOpen || lockModal != 0);
+    // child EDIT may poke through it (they are real HWNDs and would paint on top).
+    // The top-bar floating lists (文件 / 语言 / 导出图片 scale) get the same
+    // treatment: the language list hangs over the inspector, and a native EDIT
+    // would paint a white box straight through it.
+    const bool topListOverlay = (ui_.langOpen || ui_.fileOpen || ui_.pngScaleOpen);
+    const bool lockOverlay = (lockOpen || lockModal != 0) || topListOverlay;
     auto place = [&](HWND h, const RECT& r, bool show) {
         PlaceInspectorEdit(h, r, show && !lockOverlay, L_.right);
     };
@@ -2493,36 +2642,37 @@ void App::PaintOverlay(Gdiplus::Graphics& g) {
     }
 
     // ---- language dropdown: the floating list under the 中 / EN badge ---------
-    if (ui_.langOpen) {
-        const int rowH = D(26);
-        const int w = D(132);
-        int x = L_.langBox.left;
-        if (x + w > cw_ - D(8)) x = cw_ - D(8) - w;
-        if (x < D(8)) x = D(8);
-        const int y = L_.langBox.bottom + D(4);
-        RECT box = {x, y, x + w, y + 4 * rowH + D(8)};
-        L_.langList = box;
-        dr::FillRound(g, dr::RF(box), (float)D(7), dr::C(theme::kPanel));
-        dr::StrokeRound(g, dr::RF(box), (float)D(7), dr::C(theme::kBorderStrong), 1.f);
-        for (int i = 0; i < 4; ++i) {
-            RECT r = {x + D(4), y + D(4) + i * rowH, x + w - D(4),
-                      y + D(4) + (i + 1) * rowH};
-            L_.langRow[i] = r;
-            const bool active = (int)L10n::Get() == i;
-            if (ui_.langHoverRow == i)
-                dr::FillRound(g, dr::RF(r), (float)D(4), dr::C(theme::kHover));
-            dr::Text(g, L10n::Label((Lang)i), Font(9.f, active),
-                     dr::C(active ? theme::kText : theme::kTextMuted),
-                     RECT{r.left + D(12), r.top, r.right - D(30), r.bottom}, 0, true);
-            if (active)
-                dr::Text(g, L10n::Code((Lang)i), Font(8.f),
-                         dr::C(theme::kAccent),
-                         RECT{r.right - D(34), r.top, r.right - D(8), r.bottom}, 2,
+    // The RECTS come from RebuildLangMenu(), which recomputes them from the chip
+    // on every open / layout — the painter never invents geometry of its own, so
+    // a paint can never use a list rect left over from before a language switch.
+    // The list is clamped into the client area (flipped above the chip when the
+    // window is too short) and the inspector's native EDITs are hidden while it
+    // is open (see Layout), so nothing paints through it.
+    {
+        RebuildLangMenu();
+        if (ui_.langOpen && L_.langList.right > L_.langList.left &&
+            L_.langRow[3].bottom > L_.langRow[0].top) {
+            const RECT box = L_.langList;
+            dr::FillRound(g, dr::RF(box), (float)D(7), dr::C(theme::kPanel));
+            dr::StrokeRound(g, dr::RF(box), (float)D(7),
+                            dr::C(theme::kBorderStrong), 1.f);
+            for (int i = 0; i < 4; ++i) {
+                const RECT r = L_.langRow[i];
+                if (r.right <= r.left) continue;
+                const bool active = (int)L10n::Get() == i;
+                if (ui_.langHoverRow == i)
+                    dr::FillRound(g, dr::RF(r), (float)D(4), dr::C(theme::kHover));
+                dr::Text(g, L10n::Label((Lang)i), Font(9.f, active),
+                         dr::C(active ? theme::kText : theme::kTextMuted),
+                         RECT{r.left + D(12), r.top, r.right - D(30), r.bottom}, 0,
                          true);
+                if (active)
+                    dr::Text(g, L10n::Code((Lang)i), Font(8.f),
+                             dr::C(theme::kAccent),
+                             RECT{r.right - D(34), r.top, r.right - D(8), r.bottom},
+                             2, true);
+            }
         }
-    } else {
-        L_.langList = {};
-        for (int i = 0; i < 4; ++i) L_.langRow[i] = {};
     }
 
     // ---- 导出图片 resolution chooser -------------------------------------
@@ -2618,6 +2768,7 @@ void App::MouseDown(int x, int y) {
     // thing that does — a press anywhere else just closes it
     if (PtInRect(&L_.lockChip, p) || lockOpen) {
         if (!LockClick(x, y) && lockOpen) LockCloseAll();
+        CloseLangMenu(false);  // the padlock popover owns the window
         Layout();              // EDIT controls hide / come back with the overlay
         InvalidateAll();
         return;
@@ -2821,8 +2972,7 @@ void App::MouseDown(int x, int y) {
         ui_.popupIndex = -1;
         ui_.popupCat = -1;
         ui_.spotListOpen = -1;
-        ui_.langOpen = false;
-        ui_.langHoverRow = -1;
+        CloseLangMenu(false);   // a page switch always drops the open language list
         // the export chip's scale chooser belongs to the drawing pages: a page
         // switch always closes it (通道表 would not offer it at all)
         ui_.pngScaleOpen = false;
@@ -2836,16 +2986,24 @@ void App::MouseDown(int x, int y) {
         return;
     }
     if (PtInRect(&L_.langBox, p)) {
-        ui_.langOpen = !ui_.langOpen;
-        ui_.langHoverRow = -1;
-        InvalidateAll();
+        if (ui_.langOpen) {
+            CloseLangMenu();
+        } else {
+            // open: the geometry is rebuilt from the chip NOW (below / flipped
+            // above, clamped inside the client) and the inspector EDITs are
+            // hidden by the Layout() call, so the list is never painted over
+            ui_.langOpen = true;
+            ui_.langHoverRow = -1;
+            Layout();
+            InvalidateAll();
+        }
         return;
     }
     if (PtInRect(&L_.fnFile, p)) {
+        CloseLangMenu(false);
         ui_.fileOpen = !ui_.fileOpen;
         ui_.fileHoverRow = -1;
-        ui_.langOpen = false;
-        ui_.langHoverRow = -1;
+        Layout();     // hide / bring back the inspector EDITs behind the list
         InvalidateAll();
         return;
     }
@@ -2867,6 +3025,7 @@ void App::MouseDown(int x, int y) {
         }
         ui_.fileOpen = false;
         ui_.fileHoverRow = -1;
+        Layout();          // the inspector EDITs come back with the list gone
         InvalidateAll();
         if (inside) return;
     }
@@ -2882,6 +3041,7 @@ void App::MouseDown(int x, int y) {
         }
         ui_.pngScaleOpen = false;
         ui_.pngScaleHoverRow = -1;
+        Layout();
         InvalidateAll();
         // a click ON the chip itself only closes the popup (the chip's own handler
         // below would otherwise immediately reopen it)
@@ -2892,15 +3052,17 @@ void App::MouseDown(int x, int y) {
         for (int i = 0; i < 4; ++i) {
             if (L_.langRow[i].right <= L_.langRow[i].left ||
                 !PtInRect(&L_.langRow[i], p)) continue;
-            ui_.langOpen = false;
-            ui_.langHoverRow = -1;
-            if ((int)L10n::Get() != i) SetLanguage((Lang)i);
+            const bool changed = (int)L10n::Get() != i;
+            CloseLangMenu(false);
+            if (changed) SetLanguage((Lang)i);   // relabels + re-lays out the bar
+            Layout();          // the inspector EDITs come back, chip shows the new code
             InvalidateAll();
             return;
         }
-        ui_.langOpen = false;
-        ui_.langHoverRow = -1;
-        InvalidateAll();
+        // a press anywhere else only closes the list (and still reaches what it
+        // was aimed at when it landed outside the panel)
+        CloseLangMenu(false);
+        Layout();
         if (inside) return;
     }
     if (L_.fnSra.right > L_.fnSra.left && PtInRect(&L_.fnSra, p)) {
@@ -2929,8 +3091,7 @@ void App::MouseDown(int x, int y) {
             // the two other top-bar lists are exclusive with this one
             ui_.fileOpen = false;
             ui_.fileHoverRow = -1;
-            ui_.langOpen = false;
-            ui_.langHoverRow = -1;
+            CloseLangMenu(false);
             Layout();      // the popup rects exist before the first paint/hit test
             InvalidateAll();
         }
@@ -2938,6 +3099,7 @@ void App::MouseDown(int x, int y) {
     }
     // 预设: open the built-in orchestra preset modal (src/Presets.cpp)
     if (PtInRect(&L_.fnPreset, p)) {
+        CloseLangMenu(false);
         OpenPresetModal();
         return;
     }
@@ -3515,7 +3677,78 @@ void App::PasteClipboard() {
     RefreshAfterProjectChange();
 }
 
+// ---------------------------------------------------------------------------
+// the top-bar language dropdown: geometry, open / close
+// ---------------------------------------------------------------------------
+// The panel is four rows tall.  Its rect is REBUILT from L_.langBox on every open
+// and on every Layout()/paint — it is never inherited from the state before a
+// language switch (a new chip width, a new tab strip, a resized window), which is
+// how the panel used to end up somewhere else than the hit-test expected.  The
+// rect is clamped inside the client area: below the chip when there is room, then
+// flipped ABOVE it, then pinned into [margin, ch_ - margin], and x is clamped the
+// same way.  Four rows always fit in a window this app can be resized to, so the
+// invariant is asserted (and a release build still clamps — it never paints out
+// of the window).
+void App::RebuildLangMenu() {
+    L_.langList = {};
+    for (auto& r : L_.langRow) r = {};
+    if (!ui_.langOpen) {
+        langFits_ = 1;
+        return;
+    }
+    const int n = 4;
+    const int margin = D(8);
+    int w = D(132);
+    if (w > cw_ - 2 * margin) w = (std::max)(D(60), cw_ - 2 * margin);
+    int rowH = D(26);
+    int boxH = n * rowH + D(8);
+    if (boxH > ch_ - 2 * margin) {
+        // a client shorter than the panel (impossible in practice): squeeze the
+        // rows so the panel still sits fully inside the window
+        boxH = (std::max)(n * D(12), ch_ - 2 * margin);
+        rowH = (std::max)(D(8), (boxH - D(8)) / n);
+        boxH = n * rowH + D(8);
+    }
+    int x = (int)L_.langBox.left;
+    if (x + w > cw_ - margin) x = cw_ - margin - w;
+    if (x < margin) x = margin;
+    int y = (int)L_.langBox.bottom + D(4);
+    if (y + boxH > ch_ - margin) y = (int)L_.langBox.top - D(4) - boxH;   // flip above
+    if (y < margin) y = margin;
+    if (y + boxH > ch_ - margin) y = (std::max)(margin, ch_ - margin - boxH);
+
+    L_.langList = {x, y, x + w, y + boxH};
+    const int firstRow = y + D(4);
+    for (int i = 0; i < n; ++i)
+        L_.langRow[i] = {x + D(4), firstRow + i * rowH, x + w - D(4),
+                         firstRow + (i + 1) * rowH};
+
+    // the list must stay inside the client: with four rows it always does
+    langFits_ = (L_.langList.left >= 0 && L_.langList.right <= cw_ &&
+                 L_.langList.top >= 0 && L_.langList.bottom <= ch_ &&
+                 L_.langRow[n - 1].bottom <= ch_) ? 1 : 0;
+    assert(langFits_ && "the language dropdown must fit inside the client area");
+    if (!langFits_) {
+        DLog("lang menu: list does not fit the client area");
+    }
+}
+
+void App::CloseLangMenu(bool relayout) {
+    if (!ui_.langOpen) return;
+    const RECT old = L_.langList;
+    ui_.langOpen = false;
+    ui_.langHoverRow = -1;
+    RebuildLangMenu();          // clears langList / langRow
+    if (relayout) Layout();     // the inspector EDITs hidden for the list come back
+    // repaint the WHOLE previous rect: the panel, its border and the hover row are
+    // gone, so no stale white box may survive the close
+    if (old.right > old.left && old.bottom > old.top)
+        InvalidateRect(hwnd_, &old, TRUE);
+    InvalidateAll();
+}
+
 void App::SetLanguage(Lang lang) {
+    CloseLangMenu(false);      // the list is rebuilt from the NEW chip width below
     L10n::Set(lang);
     UpdateTitle();
     UpdateCueBanners();
@@ -5381,8 +5614,7 @@ void App::OnKeyDown(int vk) {
         ui_.popupIndex = -1;
         ui_.popupCat = -1;
         ui_.spotListOpen = -1;
-        ui_.langOpen = false;
-        ui_.langHoverRow = -1;
+        CloseLangMenu(false);   // clears the list rect; Layout() below restores the EDITs
         ui_.pngScaleOpen = false;
         ui_.pngScaleHoverRow = -1;
         ui_.chSpotOpen = -1;

@@ -139,6 +139,11 @@ const wchar_t* kZh[] = {
     L"钢琴三重奏",
     L"钢琴四重奏",
     L"钢琴独奏",
+    // ---- SHORT chip labels (top bar / 03 toolbar) — see App::FitChip ------
+    L"文件", L"导出图片", L"导出 PDF", L"简化界面", L"恢复图标", L"预设",
+    L"自动排序",
+    // ---- 03 显示列 chips: the compact form when the band is tight -------
+    L"通道", L"型号", L"乐器", L"备注", L"路由", L"线长", L"距主", L"幅角",
 };
 
 const wchar_t* kEn[] = {
@@ -165,7 +170,7 @@ const wchar_t* kEn[] = {
     L"CONDENSER", L"DYNAMIC / RIBBON", L"SPECIALTY", L"AMBIENCE / STEREO",
     L"%d elements", L"Instrument", L"Microphone", L"Pos", L"Dir",
     L"Piano length", L"Bind 2-mic group", L"Bind 3-mic group", L"Unbind", L"Bind mics",
-    L"X (m)", L"Y (m)", L"Angle (°)", L"Add instrument", L"Simplify", L"Restore icons", L"Height (m)", L"Link group", L"Decca tree", L"Main mics", L"Omni", L"Cardioid", L"Supercard", L"Fig-8", L"Spacing (m)", L"Add microphone", L"Wide card", L"AB", L"Mixed", L"Intensity", L"Technique", L"Decca Tree", L"Centre offset (m)", L"Bind spot mic", L"Clear spot mic", L"Show text", L"L model", L"R model", L"C model", L"System engineer", L"Recording engineer", L"Assistant engineer", L"Model", L"Ch", L"Model", L"Instrument", L"Channel list", L"Export PDF", L"Remark", L"Columns",
+    L"X (m)", L"Y (m)", L"Angle (°)", L"Add instrument", L"Simple", L"Restore icons", L"Height (m)", L"Link group", L"Decca tree", L"Main mics", L"Omni", L"Cardioid", L"Supercard", L"Fig-8", L"Spacing (m)", L"Add microphone", L"Wide card", L"AB", L"Mixed", L"Intensity", L"Technique", L"Decca Tree", L"Centre offset (m)", L"Bind spot mic", L"Clear spot mic", L"Show text", L"L model", L"R model", L"C model", L"System engineer", L"Recording engineer", L"Assistant engineer", L"Model", L"Ch", L"Model", L"Instrument", L"Channel list", L"Export PDF", L"Remark", L"Columns",
     // layer 03 cabling (phase 1) + project file menu
     L"CABLING", L"DEVICES", L"+ Analog Stagebox", L"+ Digital Stagebox",
     L"+ Audio Interface", L"+ ADDA Converter",
@@ -262,7 +267,7 @@ const wchar_t* kEn[] = {
     L"Instrument text", L"Microphone text",
     // ---- same-type instruments ----
     L"Same type", L"Select all %s (%d)", L"Selected all %s ×%d",
-    L"Export image…", L"Image exported", L"Could not export the image",
+    L"Image", L"Image exported", L"Could not export the image",
     L"To main mic", L"Azimuth", L"To main mic",
     L"M model", L"S model",
     // ---- 导出图片 scale chooser ----
@@ -273,7 +278,7 @@ const wchar_t* kEn[] = {
     // ---- export progress (the export blocks the UI thread) ----
     L"Exporting image… (%d×)", L"Exporting PDF…", L"%s · %.1f s",
     // ---- per-object custom colour ----
-    L"Colour", L"Reset", L"Custom colour #%06X", L"Colour reset to the palette",
+    L"Color", L"Reset", L"Custom color #%06X", L"Color reset to the palette",
     // ---- wiring 「Connect」 block ----
     L"Connect", L"Connected to %s", L"Connected",
     // ---- unsaved changes on window close ----
@@ -287,6 +292,11 @@ const wchar_t* kEn[] = {
     L"Piano Trio",
     L"Piano Quartet",
     L"Piano Solo",
+    // ---- SHORT chip labels (top bar / 03 toolbar) — see App::FitChip ------
+    L"File", L"Image", L"PDF", L"Simple", L"Restore", L"Presets",
+    L"Auto sort",
+    L"Ch", L"Model", L"Inst", L"Remark", L"Link", L"Cable", L"To main",
+    L"Azimuth",
 };
 
 // One entry per line, each tagged with its S id, so a new language can be
@@ -362,7 +372,7 @@ const wchar_t* kDe[] = {
     L"Y (m)",                           // YLabel
     L"Winkel (°)",                      // AngleLabel
     L"Instrument hinzufügen",           // AddInstrument
-    L"Vereinfachen",                    // FnSimplify
+    L"Einfach",                         // FnSimplify
     L"Symbole wiederherstellen",        // FnRestore
     L"Höhe (m)",                        // FieldMicHeight
     L"Gruppe verknüpfen",               // LinkGroup
@@ -395,7 +405,7 @@ const wchar_t* kDe[] = {
     L"Modell",                          // ChModel
     L"Instrument",                      // ChInst
     L"Kanalliste",                      // ChTitle
-    L"PDF exportieren",                 // FnPdf
+    L"PDF",                             // FnPdf
     L"Bemerkung",                       // ChRemark
     L"Spalten",                         // ColVisible
     // layer 03 cabling (phase 1) + project file menu
@@ -487,7 +497,7 @@ const wchar_t* kDe[] = {
     // 01 Projektinfo (neue erste Seite)
     L"Projekt",
     // Voreinstellungen (eingebaute Orchesteraufstellungen)
-    L"Voreinstellungen", L"Dreifach-Holzbläser · Europäisch",
+    L"Presets", L"Dreifach-Holzbläser · Europäisch",
     L"Dreifach-Holzbläser · Amerikanisch", L"%s geladen",
     // Bühnengröße geändert: die Aufstellung bleibt mittig
     L"Bühnengröße geändert, die Aufstellung bleibt mittig",
@@ -513,7 +523,7 @@ const wchar_t* kDe[] = {
     // Zusammensetzung eines gebündelten Gruppenkabels
     L"Höhe %.1f + Sammel %.1f + Hauptlauf %.1f = %.1f m",
     // 03 通道表工具条：自动排序按钮 + 状态提示
-    L"Automatisch sortieren", L"Automatische Reihenfolge wiederhergestellt",
+    L"Auto-Sort", L"Automatische Reihenfolge wiederhergestellt",
     L"Bereits verbunden", L"Umgesteckt: %s → %s (%d Kan.)",
     L"Große Mikrofon-Gruppe", L"%d Mikrofone, bis zu %.1f m auseinander — sie werden als EIN zusammenlaufendes Kabel verdrahtet. Fortfahren?",
     L" (Höhe der geflogenen Geräte)", L"Seite %d von %d",
@@ -533,7 +543,7 @@ const wchar_t* kDe[] = {
     L"%s ×%d",
     L"Instrumententext", L"Mikrofontext",
     L"Gleicher Typ", L"Alle %s (%d)", L"%s ×%d ausgewählt",
-    L"Bild exportieren…", L"Bild exportiert", L"Bild konnte nicht exportiert werden",
+    L"Bild", L"Bild exportiert", L"Bild konnte nicht exportiert werden",
     L"Zur Hauptmikrof.", L"Azimut", L"Hauptmik.",
     L"M-Modell", L"S-Modell",
     // ---- Bildauflösung für den PNG-Export ----
@@ -558,6 +568,11 @@ const wchar_t* kDe[] = {
     L"Klaviertrio",
     L"Klavierquartett",
     L"Klaviersolo",
+    // ---- SHORT chip labels (top bar / 03 toolbar) — see App::FitChip ------
+    L"Datei", L"Bild", L"PDF", L"Einfach", L"Symbole", L"Presets",
+    L"Auto-Sort",
+    L"Kanal", L"Modell", L"Instr.", L"Bem.", L"Kette", L"Kabel", L"Haupt",
+    L"Azimut",
 };
 
 const wchar_t* kFr[] = {
@@ -631,7 +646,7 @@ const wchar_t* kFr[] = {
     L"Y (m)",                           // YLabel
     L"Angle (°)",                       // AngleLabel
     L"Ajouter un instrument",           // AddInstrument
-    L"Simplifier",                      // FnSimplify
+    L"Simple",                          // FnSimplify
     L"Restaurer les icônes",            // FnRestore
     L"Hauteur (m)",                     // FieldMicHeight
     L"Lier le groupe",                  // LinkGroup
@@ -664,7 +679,7 @@ const wchar_t* kFr[] = {
     L"Modèle",                          // ChModel
     L"Instrument",                      // ChInst
     L"Liste des canaux",                // ChTitle
-    L"Exporter PDF",                    // FnPdf
+    L"PDF",                             // FnPdf
     L"Remarque",                        // ChRemark
     L"Colonnes",                        // ColVisible
     // layer 03 cabling (phase 1) + project file menu
@@ -756,7 +771,7 @@ const wchar_t* kFr[] = {
     // 01 infos projet (nouvelle première page)
     L"Projet",
     // préréglages (dispositions d'orchestre intégrées)
-    L"Préréglages", L"Triple bois · Européen", L"Triple bois · Américain",
+    L"Présets", L"Triple bois · Européen", L"Triple bois · Américain",
     L"%s chargé",
     // taille de scène modifiée : la disposition reste centrée
     L"Scène redimensionnée, la disposition reste centrée",
@@ -782,7 +797,7 @@ const wchar_t* kFr[] = {
     // composition d'un câble de groupe convergé
     L"hauteur %.1f + collecteurs %.1f + trajet %.1f = %.1f m",
     // 03 通道表工具条：自动排序按钮 + 状态提示
-    L"Tri automatique", L"Ordre automatique rétabli",
+    L"Tri auto", L"Ordre automatique rétabli",
     L"Déjà relié", L"Recâblé %s → %s (%d canaux)",
     L"Grand groupe de micros", L"%d micros, jusqu'à %.1f m d'écart — ils seront câblés comme UN seul câble convergent. Continuer ?",
     L" (hauteur du matériel suspendu)", L"Page %d sur %d",
@@ -802,7 +817,7 @@ const wchar_t* kFr[] = {
     L"%s ×%d",
     L"Texte des instruments", L"Texte des micros",
     L"Même type", L"Tout sélectionner %s (%d)", L"%s ×%d sélectionnés",
-    L"Exporter l'image…", L"Image exportée", L"Échec de l'export de l'image",
+    L"Image", L"Image exportée", L"Échec de l'export de l'image",
     L"Vers micro princ.", L"Azimut", L"Micro princ.",
     L"Modèle M", L"Modèle S",
     // ---- résolution de l'export PNG ----
@@ -827,6 +842,11 @@ const wchar_t* kFr[] = {
     L"Trio avec piano",
     L"Quatuor avec piano",
     L"Piano solo",
+    // ---- SHORT chip labels (top bar / 03 toolbar) — see App::FitChip ------
+    L"Fichier", L"Image", L"PDF", L"Simple", L"Icônes", L"Présets",
+    L"Tri auto",
+    L"Canal", L"Modèle", L"Instr.", L"Rem.", L"Chaîne", L"Câble", L"Micro",
+    L"Azimut",
 };
 
 static_assert(sizeof(kZh) / sizeof(kZh[0]) == (int)S::Count, "zh table size");

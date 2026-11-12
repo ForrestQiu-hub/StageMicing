@@ -62,6 +62,19 @@ struct ChTableGeom {
     int chipY = 0, chipH = 0;
     RECT chip[kChCols]{};
     float chipFont = 8.5f;   // the chips shrink 1 pt when the band would overflow
+    // the fitted chip labels + pager / 自动排序 labels (the painter draws THESE,
+    // so what the dump reports is what is on screen)
+    std::wstring chipText[kChCols];
+    int chipTextW[kChCols]{};
+    int chipShort[kChCols]{};
+    float chipFontOf[kChCols]{};   // per-chip size (a tight chip may shrink alone)
+    std::wstring autoSortText;
+    float autoSortFont = 8.5f;
+    int autoSortTextW = 0;
+    int autoSortShort = 0;
+    std::wstring pageText;
+    float pageFont = 8.5f;
+    int pageTextW = 0;
     RECT colLabel{};
     // 「自动排序」: clears the manual row order and re-applies the section order
     RECT autoSort{};
@@ -85,6 +98,19 @@ struct UiLayout {
     RECT langBox{};
     RECT langList{};
     RECT langRow[4]{};
+    // per-chip fit read-out of the top-bar function band (dev --dump): the label
+    // the painter really draws, its measured width and the slot it had to fit in,
+    // so a script can prove no chip is clipped and none overlaps its neighbour
+    struct ChipFit {
+        RECT r{};
+        std::wstring text;   // the label actually drawn (may be the short form)
+        int textW = 0;       // its measured pixel width
+        int slotW = 0;       // the slot it was fitted into (pads included)
+        float font = 9.5f;   // the size it was drawn at (9.5 … 7.5)
+        int shortForm = 0;   // 1 = the short label was used
+        int elided = 0;      // 1 = the label had to be trimmed with an ellipsis
+    };
+    ChipFit topChip[6]{};   // 0 文件 / 1 SRA / 2 简化界面 / 3 导出 / 4 预设 / 5 语言
     // 导出图片 scale chooser: the tiny popup under the export chip (2x / 4x / 8x)
     RECT pngScaleList{};
     RECT pngScaleRow[3]{};
@@ -405,6 +431,28 @@ public:
     // ---- painting -------------------------------------------------------
     void PaintTopBar(Gdiplus::Graphics& g);
     void LayoutTopBar();   // measured right-aligned chip cluster + tab strip
+    // A chip label fitted into the slot the band can give it: the full label if
+    // it fits, else the short form (S::*Short), else a 0.5 pt shrink down to
+    // 7.5, else an ellipsis.  Every chip in the top bar and the 03 toolbar goes
+    // through this one helper, so no label is ever clipped and no chip can run
+    // under its neighbour.
+    struct ChipFitResult {
+        std::wstring text;
+        float size = 9.5f;
+        int textW = 0;
+        bool shortForm = false;
+        bool elided = false;
+    };
+    ChipFitResult FitChip(Gdiplus::Graphics& g, const std::wstring& full,
+                          const std::wstring& alt, int maxW, float maxSize = 9.5f,
+                          float minSize = 7.5f, bool bold = false);
+    // The top-bar language dropdown: its rect is REBUILT on every open / layout
+    // (never reused from before a language switch) and inverted when the client
+    // area is too short for it, so it always sits inside the window.
+    void RebuildLangMenu();
+    // close it, clear its rects, bring the inspector EDITs back and repaint the
+    // whole previous rect (no stale white box)
+    void CloseLangMenu(bool relayout = true);
     void PaintLeft(Gdiplus::Graphics& g);
     void PaintStage(Gdiplus::Graphics& g);
     void PaintRight(Gdiplus::Graphics& g);
@@ -870,6 +918,9 @@ public:
     float dpi_ = 1.f;
     float uiScale_ = 1.f;
     int cw_ = 0, ch_ = 0;
+    // 1 when the open language list is fully inside the client area (dev --dump
+    // prints it; RebuildLangMenu clamps and asserts the invariant)
+    int langFits_ = 1;
 
     Project pr_;
     UiState ui_;
@@ -929,6 +980,7 @@ public:
     std::wstring dumpPath_;         // --dump <path> (write the client layout, tests)
     std::wstring dumpLayoutPath_;   // --dump-layout <path> (instrument rows, tests)
     std::wstring dumpColorsPath_;   // --dump-colors <path> (muted palette table, tests)
+    std::wstring dumpNamesPath_;    // --dump-names <path> (catalogue names, 4 languages)
     int startupPreset_ = -1;        // --preset <index> (instantiate a preset at launch)
     // --link <aKind> <aId> <bKind> <bId> … scripted wiring for regression tests
     std::vector<std::array<int, 4>> startupLinks_;
@@ -947,6 +999,11 @@ public:
     // startup code calls the very same handlers a real mouse / keyboard event
     // reaches, so a screenshot after launch shows the interactive state.
     std::vector<std::array<int, 3>> startupInputs_;
+    // --winsize <clientW> <clientH>: resize the client area BEFORE the scripted
+    // inputs, so a test can screenshot / dump the same state at 1400x900 and at
+    // 1843x1172 without touching the window by hand
+    int startupWinW_ = 0;
+    int startupWinH_ = 0;
 
     HWND ePiece_ = nullptr, eVenue_ = nullptr, eConductor_ = nullptr,
          eNotes_ = nullptr, eSelName_ = nullptr, ePianoLen_ = nullptr, eWidth_ = nullptr,

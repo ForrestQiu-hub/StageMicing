@@ -20,8 +20,11 @@ std::wstring Lower(std::wstring s) {
 bool Match(const CatItem& it, const std::wstring& q) {
     if (q.empty()) return true;
     std::wstring qq = Lower(q);
-    return Lower(it.zh).find(qq) != std::wstring::npos ||
-           Lower(it.en).find(qq) != std::wstring::npos;
+    // all four names are searchable, whichever language the UI is in
+    auto has = [&](const wchar_t* s) {
+        return s && *s && Lower(s).find(qq) != std::wstring::npos;
+    };
+    return has(it.zh) || has(it.en) || has(it.de) || has(it.fr);
 }
 
 struct Block {

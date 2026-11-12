@@ -148,6 +148,23 @@ enum class S {
     PresetPianoTrio,       // 钢琴三重奏
     PresetPianoQuartet,    // 钢琴四重奏
     PresetPianoSolo,       // 钢琴独奏
+    // ---- SHORT chip labels (top bar / 03 toolbar) — appended last ---------
+    // A chip is only as wide as its slot.  The full label is used whenever it
+    // fits; if it does not (long German / French words) the chip falls back to
+    // one of these, then to a 0.5 pt smaller font (min 7.5), then to an
+    // ellipsis — see App::FitChip.  Chips only; never a menu / status line.
+    FnFileShort,      // 文件     / File    / Datei   / Fichier
+    FnExportShort,    // 导出图片 / Image   / Bild    / Image
+    FnPdfShort,       // 导出 PDF / PDF     / PDF     / PDF
+    FnSimplifyShort,  // 简化界面 / Simple  / Einfach / Simple
+    FnRestoreShort,   // 恢复图标 / Restore / Symbole / Icônes
+    FnPresetShort,    // 预设     / Presets / Presets / Présets
+    ChAutoSortShort,  // 自动排序 / Auto sort / Auto-Sort / Tri auto
+    // 03 显示列 chips: the compact form used when the toolbar band is tight
+    // (the chip labels are already the short form of the column caption; these
+    // are the form that still fits 8 chips on one row at 1400 px width)
+    ChNumChip, ChModelChip, ChInstChip, ChRemarkChip,
+    CbLinkChip, CbLenChip, ChToMainChip, ChAzimuthChip,
     Count
 };
 
