@@ -1,5 +1,9 @@
 # Stage Micing · 舞台摆位
 
+> **最新版本请到 [Releases](https://github.com/ForrestQiu-hub/StageMicing/releases) 下载**：安装包与开发包整包都会挂在最新一次 Release 里，附件随版本固定，不受后续提交影响。
+> 仓库内也保留了一份直链：[安装包](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_Setup.exe) ｜ [开发包](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_开发版.zip)
+
+
 **中文** | [English](#english)
 
 古典音乐会的「舞台摆位 + 话筒布局」设计工具 —— Windows / C++20 / Win32 / GDI+。
@@ -83,6 +87,10 @@ INTRO.txt         产品简介
 
 <a name="english"></a>
 # Stage Micing · Stage Placement (English)
+
+> **Download the latest build from [Releases](https://github.com/ForrestQiu-hub/StageMicing/releases)** — the installer and the developer package are attached to each release, so a download stays pinned to its version.
+> Direct links inside the repo: [installer](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_Setup.exe) ｜ [developer package](https://github.com/ForrestQiu-hub/StageMicing/raw/main/dist/StageMicing_开发版.zip)
+
 
 A planning tool for classical concert **stage layout and microphone placement** — Windows / C++20 / Win32 / GDI+.
 
