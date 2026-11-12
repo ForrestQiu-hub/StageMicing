@@ -15,7 +15,7 @@
 
 - **安装包（推荐）**：[`dist/StageMicing_Setup.exe`](dist/StageMicing_Setup.exe) —— 双击安装，免管理员权限，装到 `%LOCALAPPDATA%\StageMicing`，自动建快捷方式，可从「开始菜单」卸载。
 - **开发版整包**（源码 + 构建树 + 工具 + 快照）：见 **Releases**。
-- **说明书**：`说明书\`（中文 / English / Deutsch / Français）。
+- **说明书**：`manuals/`（中文 / English / Deutsch / Français）。
 
 ## 功能
 
@@ -68,10 +68,10 @@ demo/           示例工程（12 套预设对应的原始工程 + test.smproj�
 docs/           设计文档（STATUS / CABLING / BACKUP-RULES）
 tools/          辅助脚本（素材生成、测量、打包）
 dist/           发布物（安装包）
-说明书/          四语使用说明书
-安装说明/        四语安装说明
-功能总览.txt     全部功能一览
-简介.txt         产品简介
+manuals/        四语使用说明书（zh / en / de / fr）
+installation/   四语安装说明
+FEATURES.txt     全部功能一览
+INTRO.txt         产品简介
 ```
 
 ## 版本
@@ -95,7 +95,7 @@ then export a stage plot (PNG) and a channel list (PDF). No network, no external
 
 - **Installer (recommended)**: [`dist/StageMicing_Setup.exe`](dist/StageMicing_Setup.exe) — double-click, no administrator rights, installs to `%LOCALAPPDATA%\StageMicing`, creates shortcuts, uninstall from the Start menu.
 - **Developer package** (sources + build tree + tools + snapshots): see **Releases**.
-- **Manuals**: `说明书\` (Chinese / English / Deutsch / Français).
+- **Manuals**: `manuals/` (Chinese / English / Deutsch / Français).
 
 ## Features
 
@@ -149,10 +149,10 @@ demo/           sample projects (the 12 preset sources + test.smproj)
 docs/           design notes (STATUS / CABLING / BACKUP-RULES)
 tools/          helper scripts (asset generation, measuring, packaging)
 dist/           release artefacts (installer)
-说明书/          manuals in four languages
-安装说明/        installation notes in four languages
-功能总览.txt     full feature list (Chinese)
-简介.txt         product intro (Chinese)
+manuals/        manuals in four languages
+installation/   installation notes in four languages
+FEATURES.txt     full feature list (Chinese)
+INTRO.txt         product intro (Chinese)
 ```
 
 ## Version
