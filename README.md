@@ -1,6 +1,7 @@
 # Stage Micing · 舞台摆位
 -**？！更新！？** 
 -**网页版**（Win / Mac / Linux系统都可使用，功能几乎一致）
+
 -**？！New Version！？**
 -**Web**（Win / Mac / Linux all accessible, with the function almost the same）
 
